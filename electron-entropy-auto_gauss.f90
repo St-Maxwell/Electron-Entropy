@@ -1,21 +1,37 @@
-PROGRAM electron_entropy
+module global
     implicit none
-    real ( kind = 8 ) :: T 
-    real ( kind = 8 ) :: T0 = 0.0D0
-    real ( kind = 8 ) :: step = 1.0D0
+    integer,parameter :: inputfile = 10
+    integer,parameter :: outputfile = 11
+    character ( len = 4 ) :: option
+    real ( kind = 8 ) :: startT, step
+    real ( kind = 8 ), allocatable :: groupT (:)
+    integer :: n
+end module
+
+PROGRAM electron_entropy
+    use global
+    implicit none
     integer :: i
-    write(*,*) "T(K)     S(J/mol-K)  dT(K)"
-  
-    do i = 1, 10
-        T = T0 + step * dble( i )
-       call calcS ( T )
+
+    call read()
+
+    open ( outputfile, file = "result.txt" )
+    
+    write(outputfile,*) "Compute the entropy of free electron gas"
+    write(outputfile,*) "Programmed by St Maxwell"
+    write(outputfile,*) "Reference: J. Chem. Theory Comput. 2013, 9, 3165−3169"
+    write(outputfile,*) 
+    write(outputfile,*) "T(K)     S(J/mol-K)  dT(K)"
+
+    do i = 1, n
+        call calcS ( groupT ( i ) )
     end do
-    !read(*,*)
     
     stop
 END PROGRAM
     
 subroutine calcS ( T0 )
+    use global
     implicit none
     real ( kind = 8 ), parameter :: h = 6.626070040D0 ! D-34
     real ( kind = 8 ), parameter :: kB = 1.38064852D0 ! D-23
@@ -26,7 +42,6 @@ subroutine calcS ( T0 )
     real ( kind = 8 ), parameter :: R = 8.314D0
     real ( kind = 8 ) :: fp32, fp12, KK, T0, T, Sm, dT
     real ( kind = 8 ) :: a 
-    real ( kind = 8 ) :: x0 = 1.0D5
     
     KK = ( atm * h**3.0D0 * 1.0D7 ) / ( J * ( 2.0D0 * pi * mass_e )**1.5D0 * kB**2.5D0 )
     call bisection ( T0, KK, a )
@@ -38,7 +53,7 @@ subroutine calcS ( T0 )
     Sm = R * ( ( 5.0D0 * fp32 ) / ( 2.0D0 * fp12 ) - log( a ) )
     dT = abs ( T - T0 )
 
-    write(*,"(F7.2,'   ',F8.4,'   ',F12.10)") T, Sm, dT
+    write(outputfile,"(F7.2,'   ',F8.4,'   ',F12.10)") T, Sm, dT
 
 end subroutine
 
@@ -113,7 +128,6 @@ subroutine auto_gauss ( func, s, low, up, tol, a, p )
 !  Date      :  2010-5-31
 !-----------------------------------------------------
 !  Purpose   :  变步长高斯积分方法
-!    
 !-----------------------------------------------------
 !  Input  parameters  :
 !       1.  func 外部函数（待计算的函数）
@@ -124,11 +138,11 @@ subroutine auto_gauss ( func, s, low, up, tol, a, p )
 !       1.  s  积分结果
 !       2.  M  实际区间划分个数
 !  Common parameters  :
-!
+!       1.    a     fp函数参数
+!       2.    p     fp函数参数
 !----------------------------------------------------
 !  Post Script :
-!       1.
-!       2.  需要调用复合高斯积分函数
+!       1.  需要调用复合高斯积分函数
 !----------------------------------------------------
     implicit none
     real ( kind = 8 ) :: s, low, up, tol, s1, s2, del, a
@@ -137,7 +151,7 @@ subroutine auto_gauss ( func, s, low, up, tol, a, p )
     
     m = 2
 
-!最大允许重新划分20次，
+    !最大允许重新划分20次，
     do i = 1, 60
         
       call com_Gauss ( func, s1, low, up, m, a, p )
@@ -164,7 +178,6 @@ subroutine com_Gauss ( func, s, low, up, n, a, p )
 !  Date      :  
 !-----------------------------------------------------
 !  Purpose   :  复合5点高斯勒让德积分函数
-!    
 !-----------------------------------------------------
 !  Input  parameters  :
 !       1. func 外部函数
@@ -172,13 +185,12 @@ subroutine com_Gauss ( func, s, low, up, n, a, p )
 !       3. n 区间划分个数
 !  Output parameters  :
 !       1.  s 积分结果
-!       2.
 !  Common parameters  :
-!
+!       1.    a     fp 函数参数
+!       2.    p     fp 函数参数
 !----------------------------------------------------
 !  Post Script :
 !       1.   需要调用单区间高斯勒让德公式函数
-!       2.
 !----------------------------------------------------
     implicit none
     real ( kind = 8 ) :: s, s1, low, up, hstep, c, d, a
@@ -200,22 +212,21 @@ subroutine com_Gauss ( func, s, low, up, n, a, p )
 end subroutine
 
 subroutine GL ( func, s, low, up, a, p )
-!---------------------------------subroutine  comment
+!---------------subroutine  comment-------------------
 !  Version   :  V1.0    
 !  Coded by  :  syz 
 !  Date      :  2010-5-30
 !-----------------------------------------------------
 !  Purpose   :5点 Gauss-Legendre积分
-!    
 !-----------------------------------------------------
 !  Input  parameters  :
 !       1.    func  外部函数
 !       2.    a,b   积分区间
 !  Output parameters  :
 !       1.    s 积分结果
-!       2.
 !  Common parameters  :
-!
+!       1.    a     fp函数参数
+!       2.    p     fp函数参数
 !----------------------------------------------------
 !  Post Script :
 !       1.  选用5节点的公式
@@ -251,7 +262,7 @@ subroutine bisection( T, KK, a )
     real ( kind = 8 ) :: temp
     real ( kind = 8 ) :: a, a_up, a_low, a_mid, hda
     real ( kind = 8 ) :: f32_up, f32_low, f32_mid
-    real ( kind = 8 ) :: error = 1.0D-9
+    real ( kind = 8 ) :: error = 1.0D-10
     integer :: counter, eff_num
 
     temp = KK / T**2.5D0
@@ -282,6 +293,7 @@ subroutine bisection( T, KK, a )
             a_low = 10.0D0 ** ( -100.0D0 * T + 280.0D0 )
         case default
             write(*,*) " Temperature is out of range!"
+            read(*,*)
             stop
     end select
 
@@ -299,6 +311,7 @@ subroutine bisection( T, KK, a )
             a_mid = 0.5D0 * ( a_up + a_low )
         else
             write(*,*) " Unreasonable guess!"
+            read(*,*)
             stop
         end if
         
@@ -320,5 +333,48 @@ subroutine bisection( T, KK, a )
     
     if ( counter == 129 ) write(*,"(' Bisection step exceeds')") 
     a = 0.5D0 * ( a_up + a_low )
+
+end subroutine
+
+subroutine read ()
+    use global
+    implicit none
+    integer :: i
+    logical :: alive
+    integer :: error
+
+    inquire ( file = "eS_input.txt", exist = alive )
+    if ( .not. alive ) then
+        write(*,*) "eS_input.txt dosen't exist."
+        read(*,*)
+        stop
+    end if
+
+    open ( inputfile, file = "eS_input.txt", status = "old", iostat = error )
+    if ( error /= 0 ) then
+        write(*,*) "Fail to open eS_input.txt."
+        read(*,*)
+        stop
+    end if
+
+    read(inputfile,*) option
+
+    if ( option == "scan" ) then
+        read(inputfile,*) startT, step, n
+        allocate(groupT(n))
+        do i = 1, n
+            groupT ( i ) = startT + step * dble( i - 1 )
+        end do
+    else if ( option == "1by1" ) then
+        read(inputfile,*) n
+        read(inputfile,*) 
+        allocate(groupT(n))
+        do i = 1, n
+            read(inputfile,*) groupT ( i )
+        end do
+    else
+        write(*,*) "Invalid option!"
+        read(*,*)
+    end if
 
 end subroutine
