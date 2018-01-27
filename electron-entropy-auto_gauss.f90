@@ -275,28 +275,31 @@ subroutine bisection( T, KK, a )
     select case ( ceiling( T ) )
         case ( 101: )
             a_up = 1.0D3
-            a_low = 1.0D-10
+            a_low = 0.0D0
         case ( 51:100 )
-            a_up = 2.0D5
-            a_low = 5.0D1
-        case ( 11:50 )
-            a_up = 10.0D0 ** ( -0.4D0 * T + 27.0D0 )
-            a_low = 10.0D0 ** ( -0.4D0 * T + 17.0D0 )
+            a_up = 10.0D0 ** ( -0.07D0 * T + 9.0D0 )
+            a_low = 10.0D0 ** ( -0.07D0 * T + 7.4D0 )
+        case ( 21:50 )
+            a_up = 10.0D0 ** ( -0.15D0 * T + 14.0D0 )
+            a_low = 10.0D0 ** ( -0.15D0 * T + 11.0D0 )  
+        case ( 11:20 )
+            a_up = 10.0D0 ** ( -1.0D0 * T + 31.0D0 )
+            a_low = 10.0D0 ** ( -1.0D0 * T + 26.0D0 )
         case ( 6:10 )
-            a_up = 10.0D0 ** ( -3.6D0 * T + 61.0D0 )
-            a_low = 10.0D0 ** ( -3.6D0 * T + 51.0D0 )
+            a_up = 10.0D0 ** ( -4.2D0 * T + 64.0D0 )
+            a_low = 10.0D0 ** ( -4.2D0 * T + 53.0D0 )
         case ( 3:5 )
-            a_up = 10.0D0 ** ( -20.0D0 * T + 151.0D0 )
-            a_low = 10.0D0 ** ( -20.0D0 * T + 126.0D0 )
+            a_up = 10.0D0 ** ( -21.0D0 * T + 149.0D0 )
+            a_low = 10.0D0 ** ( -21.0D0 * T + 128.0D0 )
         case ( 1:2 )
             a_up = 10.0D0 ** ( -100.0D0 * T + 315.0D0 )
-            a_low = 10.0D0 ** ( -100.0D0 * T + 280.0D0 )
+            a_low = 10.0D0 ** ( -100.0D0 * T + 275.0D0 )
         case default
             write(*,*) " Temperature is out of range!"
             read(*,*)
             stop
     end select
-
+        
     counter = 0
     
     do while ( .true. )
@@ -309,6 +312,8 @@ subroutine bisection( T, KK, a )
         
         if ( (f32_up * f32_low) < 0.0D0 ) then
             a_mid = 0.5D0 * ( a_up + a_low )
+        else if ( (f32_up * f32_low) == 0.0D0 ) then
+            exit
         else
             write(*,*) " Unreasonable guess!"
             read(*,*)
@@ -327,13 +332,20 @@ subroutine bisection( T, KK, a )
         hda = 0.5D0 * ( a_up - a_low )
         counter = counter + 1
         
-        if ( hda < error .or. counter > 128 ) exit
+        if ( hda < error .or. counter > 128 ) then
+            if ( counter == 129 ) write(*,"(' Bisection step exceeds')") 
+            a = 0.5D0 * ( a_up + a_low )
+            exit
+        end if
         
     end do
     
-    if ( counter == 129 ) write(*,"(' Bisection step exceeds')") 
-    a = 0.5D0 * ( a_up + a_low )
-
+    if ( f32_up == 0.0D0 ) then
+        a = a_up
+    else if ( f32_up == 0.0D0 ) then
+        a = a_low
+    end if
+    
 end subroutine
 
 subroutine read ()
