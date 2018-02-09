@@ -12,6 +12,7 @@ PROGRAM electron_entropy
     use global
     implicit none
     integer :: i
+    real(kind=8) :: time_begin, time_end
 
     call read()
 
@@ -23,10 +24,17 @@ PROGRAM electron_entropy
     write(outputfile,*) 
     write(outputfile,*) "T(K)     S(J/mol-K)  dT(K)"
 
+    call cpu_time(time_begin)
+
     do i = 1, n
         call calcS ( groupT ( i ) )
     end do
     
+    call cpu_time(time_end)
+
+    write(outputfile,*) 
+    write(outputfile,"(' Job cpu time: ',F9.4,' seconds.')") time_end - time_begin
+
     stop
 END PROGRAM
     
@@ -271,35 +279,20 @@ subroutine bisection( T, KK, a )
         eff_num = ceiling ( 1.22164D0 + 193.43663D0 / ( T - 0.06002D0 ) ) - 10
         error = 10**dble(eff_num)
     end if
-    
+
     select case ( ceiling( T ) )
         case ( 101: )
             a_up = 1.0D3
             a_low = 0.0D0
-        case ( 51:100 )
-            a_up = 10.0D0 ** ( -0.07D0 * T + 9.0D0 )
-            a_low = 10.0D0 ** ( -0.07D0 * T + 7.4D0 )
-        case ( 21:50 )
-            a_up = 10.0D0 ** ( -0.15D0 * T + 14.0D0 )
-            a_low = 10.0D0 ** ( -0.15D0 * T + 11.0D0 )  
-        case ( 11:20 )
-            a_up = 10.0D0 ** ( -1.0D0 * T + 31.0D0 )
-            a_low = 10.0D0 ** ( -1.0D0 * T + 26.0D0 )
-        case ( 6:10 )
-            a_up = 10.0D0 ** ( -4.2D0 * T + 64.0D0 )
-            a_low = 10.0D0 ** ( -4.2D0 * T + 53.0D0 )
-        case ( 3:5 )
-            a_up = 10.0D0 ** ( -21.0D0 * T + 149.0D0 )
-            a_low = 10.0D0 ** ( -21.0D0 * T + 128.0D0 )
-        case ( 1:2 )
-            a_up = 10.0D0 ** ( -100.0D0 * T + 315.0D0 )
-            a_low = 10.0D0 ** ( -100.0D0 * T + 275.0D0 )
+        case ( 1:100 )
+            a_up = 10.0D0 ** ( 5.0D0 + 196.0D0 / ( T - 0.05421D0 ) )
+            a_low = 10.0D0 ** ( -1.6D0 + 190.0D0 / ( T - 0.05421D0 ) )
         case default
             write(*,*) " Temperature is out of range!"
             read(*,*)
             stop
     end select
-        
+
     counter = 0
     
     do while ( .true. )
