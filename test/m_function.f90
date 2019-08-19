@@ -1,9 +1,9 @@
 module m_function
   use iso_fortran_env, only: r8 => real64
+  use m_global, only: pi
   implicit none
   private
   public :: f32, f12
-  real(kind=r8), parameter :: pi = 3.141592653589793_r8
 
   interface
     function inner(x)
@@ -24,7 +24,7 @@ module m_function
     real(kind=r8) :: step, tmp
     integer :: i, tid
     !---------------------------------------------------------------------------
-    ! number of threads, should manually set it to 1 when compiling codes in serial
+    ! number of threads, should manually set it 1 when compiling codes in serial
     integer, parameter :: num_threads = 4
     
     step = 0.5_r8 * (up - down) / num
@@ -85,17 +85,20 @@ module m_function
 
 end module
 
-program main
-  use iso_fortran_env, only: r8 => real64
-  use m_function
-  use m_timer
-  implicit none
-  type(timer) :: clock
-
-  call clock%start()
-    write(*,*) f32(1.E5_r8)
-    write(*,*) f32(1.E10_r8)
-    write(*,*) f32(1.E50_r8)
-  call clock%stop()
-
-end program
+!program main
+!  use iso_fortran_env, only: r8 => real64
+!  use m_function
+!  use m_timer
+!  implicit none
+!  type(timer) :: clock
+!
+!  call clock%start()
+!    write(*,*) f32(1.E5_r8)
+!    write(*,*) f32(1.E10_r8)
+!    write(*,*) f32(1.E50_r8)
+!    write(*,*) f12(1.E5_r8)
+!    write(*,*) f12(1.E10_r8)
+!    write(*,*) f12(1.E50_r8)
+!  call clock%stop()
+!
+!end program

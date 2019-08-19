@@ -1,9 +1,9 @@
 module m_function
   use iso_fortran_env, only: r8 => real64
+  use m_global, only: pi
   implicit none
   private
   public :: f32, f12
-  real(kind=r8), parameter :: pi = 3.141592653589793_r8
 
   interface
     function inner(x)
